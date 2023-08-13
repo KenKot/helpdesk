@@ -1,11 +1,15 @@
+import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
-import { notFound } from "next/navigation";
 
-export const dynamicParams = true; // default val = true
+// components
+import DeleteIcon from "./DeleteIcon";
+
+export const dynamicParams = true;
 
 export async function generateMetadata({ params }) {
   const supabase = createServerComponentClient({ cookies });
+
   const { data: ticket } = await supabase
     .from("tickets")
     .select()
@@ -13,22 +17,13 @@ export async function generateMetadata({ params }) {
     .single();
 
   return {
-    title: `Dojo Helpdesk | ${ticket?.title || "Ticket Not Found"}`,
+    title: `Dojo Helpdesk | ${ticket?.title || "Ticket not Found"}`,
   };
 }
 
-// export async function generateStaticParams() { // cant use this with authentication!
-//   const res = await fetch("http://localhost:4000/tickets");
-
-//   const tickets = await res.json();
-
-//   return tickets.map((ticket) => ({
-//     id: ticket.id,
-//   }));
-// }
-
 async function getTicket(id) {
   const supabase = createServerComponentClient({ cookies });
+
   const { data } = await supabase
     .from("tickets")
     .select()
@@ -43,13 +38,20 @@ async function getTicket(id) {
 }
 
 export default async function TicketDetails({ params }) {
-  // const id = params.id
   const ticket = await getTicket(params.id);
+
+  const supabase = createServerComponentClient({ cookies });
+  const { data } = await supabase.auth.getSession();
 
   return (
     <main>
       <nav>
         <h2>Ticket Details</h2>
+        <div className="ml-auto">
+          {data.session.user.email === ticket.user_email && (
+            <DeleteIcon id={ticket.id} />
+          )}
+        </div>
       </nav>
       <div className="card">
         <h3>{ticket.title}</h3>
